@@ -59,30 +59,17 @@ function applyFavoriteTeamMeta(teamId) {
   const touchIcon = document.getElementById('apple-touch-icon-link');
   if (touchIcon) touchIcon.href = logoUrl;
   const favImg = document.getElementById('fav-team-logo');
-  if (favImg) favImg.src = logoUrl;
-  const manifest = {
-    name: 'mlbAG', short_name: 'mlbAG',
-    description: 'Live MLB stats aggregator',
-    start_url: '.', scope: '.', display: 'standalone',
-    background_color: '#0d1117', theme_color: '#0d1117',
-    orientation: 'portrait-primary',
-    icons: [{ src: logoUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-  const link = document.querySelector("link[rel='manifest']");
-  if (link) {
-    if (link._blobUrl) URL.revokeObjectURL(link._blobUrl);
-    link._blobUrl = URL.createObjectURL(blob);
-    link.href = link._blobUrl;
-  }
+  if (favImg) { favImg.src = logoUrl; favImg.onerror = () => { favImg.src = 'icon.svg'; }; }
 }
 
 function setFavoriteTeam(teamId) {
+  const isNew = getFavoriteTeamId() !== teamId;
   localStorage.setItem('mlbag_fav_team', teamId);
   applyFavoriteTeamMeta(teamId);
   document.querySelectorAll('.tp-team').forEach(el => {
     el.classList.toggle('tp-selected', parseInt(el.dataset.id) === teamId);
   });
+  if (isNew) showToast('Remove and re-add the app to your home screen to update the icon');
 }
 
 function openTeamPicker() {
@@ -885,7 +872,7 @@ async function openGamedayView(gamePk, gameData) {
 
   gamesSection.classList.add('hidden');
   gamedayDetail.classList.remove('hidden');
-  pushHash();
+  history.pushState(null, '', `#game/${gamePk}/${state.gdTab || 'live'}/${state.currentDate}`);
 
   document.querySelectorAll('.game-card').forEach(c =>
     c.classList.toggle('selected', parseInt(c.dataset.gamePk) === gamePk));
@@ -4851,7 +4838,7 @@ function openStandings() {
   $('nav-standings-btn')?.classList.add('active');
   syncMobNav('mob-nav-standings');
   fetchAndRenderStandings();
-  pushHash();
+  history.pushState(null, '', '#standings');
 }
 
 function closeStandings() {
@@ -5608,6 +5595,54 @@ async function init(){
   if (!restored) refreshGrid();
   startGridPoll();
 }
+
+// ── Toast notification ───────────────────────────────────────
+function showToast(msg, duration = 3500) {
+  let el = document.getElementById('mob-toast');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'mob-toast';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('visible');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('visible'), duration);
+}
+
+// ── Back navigation via OS gesture / swipe ───────────────────
+window.addEventListener('popstate', () => {
+  const hash = location.hash.slice(1);
+  const parts = hash.split('/');
+  if (parts[0] === 'standings') {
+    $('games-section')?.classList.add('hidden');
+    $('gameday-detail')?.classList.add('hidden');
+    $('standings-section')?.classList.remove('hidden');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    $('nav-standings-btn')?.classList.add('active');
+    syncMobNav('mob-nav-standings');
+    fetchAndRenderStandings();
+  } else if (parts[0] === 'game' && parts[1]) {
+    // forward navigation — open that game if not already on it
+    const pk = parseInt(parts[1]);
+    if (state.selectedGamePk !== pk) openGamedayView(pk, state.games?.find(g => g.gamePk === pk) || null);
+  } else {
+    // back to games grid
+    if (state.selectedGamePk) {
+      stopGamedayPoll();
+      state.selectedGamePk = null;
+      state.gdData         = null;
+      gamedayDetail?.classList.add('hidden');
+      gamesSection?.classList.remove('hidden');
+      document.querySelectorAll('.game-card').forEach(c => c.classList.remove('selected'));
+    }
+    $('standings-section')?.classList.add('hidden');
+    $('games-section')?.classList.remove('hidden');
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    $('nav-gameday-btn')?.classList.add('active');
+    syncMobNav('mob-nav-games');
+  }
+});
 
 applyFavoriteTeamMeta(getFavoriteTeamId());
 init();

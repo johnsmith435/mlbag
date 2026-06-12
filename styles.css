@@ -2997,11 +2997,8 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 768px) {
 
   /* ── Safe-area / viewport ───────────────────────────────── */
-  :root {
-    --mob-nav-height: 62px;
-    --safe-top:    env(safe-area-inset-top,    0px);
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
+  /* env() used directly (not via CSS var) for iOS reliability  */
+  :root { --mob-nav-height: 62px; }
 
   body {
     overflow: hidden;
@@ -3010,8 +3007,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
   /* ── Top nav: push below notch / Dynamic Island ─────────── */
   #nav {
-    padding: var(--safe-top) 12px 0;
-    height: calc(var(--nav-height) + var(--safe-top));
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-bottom: 0;
+    height: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
     gap: 8px;
   }
   #search-wrap    { display: none; }
@@ -3033,11 +3033,11 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: calc(var(--mob-nav-height) + var(--safe-bottom));
+    height: calc(var(--mob-nav-height) + env(safe-area-inset-bottom, 0px));
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
     z-index: 300;
-    padding-bottom: var(--safe-bottom);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     align-items: flex-start;
     padding-top: 0;
   }
@@ -3064,10 +3064,15 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
   /* ── App container ──────────────────────────────────────── */
   #app {
-    margin-top: calc(var(--nav-height) + var(--safe-top));
-    min-height: calc(100dvh - var(--nav-height) - var(--safe-top) - var(--mob-nav-height) - var(--safe-bottom));
-    height:     calc(100dvh - var(--nav-height) - var(--safe-top) - var(--mob-nav-height) - var(--safe-bottom));
+    margin-top: calc(var(--nav-height) + env(safe-area-inset-top, 0px));
+    min-height: calc(100dvh - var(--nav-height) - env(safe-area-inset-top, 0px) - var(--mob-nav-height) - env(safe-area-inset-bottom, 0px));
+    height:     calc(100dvh - var(--nav-height) - env(safe-area-inset-top, 0px) - var(--mob-nav-height) - env(safe-area-inset-bottom, 0px));
     overflow: hidden;
+  }
+
+  /* ── Gameday detail: override desktop's fixed 100vh height ─ */
+  #gameday-detail {
+    height: 100% !important;
   }
 
   /* ── Games grid ─────────────────────────────────────────── */
@@ -3111,8 +3116,14 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   #gd-back {
     position: static;
     transform: none;
-    font-size: 0.75rem;
-    padding: 6px 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 8px 12px;
+    min-height: 36px;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
   }
   .gd-header-nav {
     position: static;
@@ -3227,5 +3238,30 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     -webkit-tap-highlight-color: transparent;
   }
   .panel-tab { padding: 10px 14px; font-size: 0.72rem; }
+}
+
+/* ── Toast notification (mobile + desktop) ─────────────────── */
+#mob-toast {
+  position: fixed;
+  bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.76rem;
+  padding: 10px 16px;
+  border-radius: 20px;
+  white-space: nowrap;
+  max-width: 90vw;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+#mob-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
