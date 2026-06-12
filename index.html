@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-title" content="mlbAG" />
   <meta name="theme-color" content="#0d1117" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon.svg" />
+  <link rel="apple-touch-icon" href="icon.svg" id="apple-touch-icon-link" />
   <title>mlbAG</title>
-  <link rel="stylesheet" href="styles.css?v=47" />
+  <link rel="stylesheet" href="styles.css?v=48" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -23,6 +23,10 @@
   ═══════════════════════════════════════════════════════════ -->
   <nav id="nav">
     <div class="logo"><span class="logo-mlb">mlb</span><span class="logo-ag">AG</span></div>
+
+    <button id="fav-team-btn" onclick="openTeamPicker()" title="Select favorite team">
+      <img id="fav-team-logo" src="icon.svg" alt="" />
+    </button>
 
     <div id="search-wrap">
       <span id="search-icon">⌕</span>
@@ -389,10 +393,21 @@
     </button>
   </nav>
 
-  <script src="main.js?v=42"></script>
+  <!-- ── TEAM PICKER MODAL ─────────────────────────────────── -->
+  <div id="team-picker-overlay" class="hidden" onclick="if(event.target===this)closeTeamPicker()">
+    <div id="team-picker">
+      <div id="team-picker-header">
+        <span>Choose your team</span>
+        <button onclick="closeTeamPicker()">✕</button>
+      </div>
+      <div id="team-picker-grid"></div>
+    </div>
+  </div>
+
+  <script src="main.js?v=43"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
   </script>
 </body>

@@ -35,6 +35,73 @@ const PROXY_BASE = window.location.hostname.endsWith('github.io')
 const CUR_SEASON  = new Date().getFullYear();
 const PREV_SEASON = CUR_SEASON - 1;
 
+// ── Favorite team ────────────────────────────────────────────
+const ALL_TEAMS = [
+  { id: 109, abbr: 'ARI' }, { id: 144, abbr: 'ATL' }, { id: 110, abbr: 'BAL' },
+  { id: 111, abbr: 'BOS' }, { id: 112, abbr: 'CHC' }, { id: 145, abbr: 'CWS' },
+  { id: 113, abbr: 'CIN' }, { id: 114, abbr: 'CLE' }, { id: 115, abbr: 'COL' },
+  { id: 116, abbr: 'DET' }, { id: 117, abbr: 'HOU' }, { id: 118, abbr: 'KC'  },
+  { id: 108, abbr: 'LAA' }, { id: 119, abbr: 'LAD' }, { id: 146, abbr: 'MIA' },
+  { id: 158, abbr: 'MIL' }, { id: 142, abbr: 'MIN' }, { id: 121, abbr: 'NYM' },
+  { id: 147, abbr: 'NYY' }, { id: 133, abbr: 'OAK' }, { id: 143, abbr: 'PHI' },
+  { id: 134, abbr: 'PIT' }, { id: 135, abbr: 'SD'  }, { id: 137, abbr: 'SF'  },
+  { id: 136, abbr: 'SEA' }, { id: 138, abbr: 'STL' }, { id: 139, abbr: 'TB'  },
+  { id: 140, abbr: 'TEX' }, { id: 141, abbr: 'TOR' }, { id: 120, abbr: 'WSH' },
+];
+
+function getFavoriteTeamId() {
+  const v = localStorage.getItem('mlbag_fav_team');
+  return v ? parseInt(v) : null;
+}
+
+function applyFavoriteTeamMeta(teamId) {
+  const logoUrl = teamId ? TEAM_LOGO(teamId) : 'icon.svg';
+  const touchIcon = document.getElementById('apple-touch-icon-link');
+  if (touchIcon) touchIcon.href = logoUrl;
+  const favImg = document.getElementById('fav-team-logo');
+  if (favImg) favImg.src = logoUrl;
+  const manifest = {
+    name: 'mlbAG', short_name: 'mlbAG',
+    description: 'Live MLB stats aggregator',
+    start_url: '.', scope: '.', display: 'standalone',
+    background_color: '#0d1117', theme_color: '#0d1117',
+    orientation: 'portrait-primary',
+    icons: [{ src: logoUrl, sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+  const link = document.querySelector("link[rel='manifest']");
+  if (link) {
+    if (link._blobUrl) URL.revokeObjectURL(link._blobUrl);
+    link._blobUrl = URL.createObjectURL(blob);
+    link.href = link._blobUrl;
+  }
+}
+
+function setFavoriteTeam(teamId) {
+  localStorage.setItem('mlbag_fav_team', teamId);
+  applyFavoriteTeamMeta(teamId);
+  document.querySelectorAll('.tp-team').forEach(el => {
+    el.classList.toggle('tp-selected', parseInt(el.dataset.id) === teamId);
+  });
+}
+
+function openTeamPicker() {
+  const overlay = document.getElementById('team-picker-overlay');
+  const grid = document.getElementById('team-picker-grid');
+  const favId = getFavoriteTeamId();
+  grid.innerHTML = ALL_TEAMS.map(t => `
+    <button class="tp-team${t.id === favId ? ' tp-selected' : ''}" data-id="${t.id}"
+            onclick="setFavoriteTeam(${t.id})">
+      <img src="${TEAM_LOGO(t.id)}" alt="${t.abbr}" onerror="this.style.opacity=0.3" />
+      <span>${t.abbr}</span>
+    </button>`).join('');
+  overlay.classList.remove('hidden');
+}
+
+function closeTeamPicker() {
+  document.getElementById('team-picker-overlay')?.classList.add('hidden');
+}
+
 function estimateTeamGamesPlayed() {
   const start = new Date(CUR_SEASON + '-03-27');
   const days  = Math.max(0, (new Date() - start) / 86400000);
@@ -5542,4 +5609,5 @@ async function init(){
   startGridPoll();
 }
 
+applyFavoriteTeamMeta(getFavoriteTeamId());
 init();

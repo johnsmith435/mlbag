@@ -1,5 +1,5 @@
-const CACHE = 'mlbag-v1';
-const SHELL = ['/index.html', '/styles.css', '/main.js', '/icon.svg', '/manifest.json'];
+const CACHE = 'mlbag-v2';
+const SHELL = ['./index.html', './styles.css', './main.js', './icon.svg', './manifest.json', './Softball_Field_image_large.jpg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -19,9 +19,10 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   const url = e.request.url;
-  // Pass through API calls and proxied requests to the network
   if (url.includes('statsapi.mlb') || url.includes('fonts.goog') ||
-      url.includes('/proxy/') || url.includes('baseballsavant')) return;
+      url.includes('mlbstatic.com') || url.includes('img.mlbstatic') ||
+      url.includes('/proxy/') || url.includes('onrender.com') ||
+      url.includes('baseballsavant')) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => cached || fetch(e.request))
