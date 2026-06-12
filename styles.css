@@ -2997,16 +2997,21 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 @media (max-width: 768px) {
 
   /* ── Safe-area / viewport ───────────────────────────────── */
-  :root { --mob-nav-height: 62px; }
+  :root {
+    --mob-nav-height: 62px;
+    --safe-top:    env(safe-area-inset-top,    0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
 
   body {
     overflow: hidden;
     height: 100dvh;
   }
 
-  /* ── Top nav: simplify ──────────────────────────────────── */
+  /* ── Top nav: push below notch / Dynamic Island ─────────── */
   #nav {
-    padding: 0 12px;
+    padding: var(--safe-top) 12px 0;
+    height: calc(var(--nav-height) + var(--safe-top));
     gap: 8px;
   }
   #search-wrap    { display: none; }
@@ -3028,11 +3033,13 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     display: flex;
     position: fixed;
     bottom: 0; left: 0; right: 0;
-    height: var(--mob-nav-height);
+    height: calc(var(--mob-nav-height) + var(--safe-bottom));
     background: var(--bg-secondary);
     border-top: 1px solid var(--border);
     z-index: 300;
-    padding-bottom: env(safe-area-inset-bottom);
+    padding-bottom: var(--safe-bottom);
+    align-items: flex-start;
+    padding-top: 0;
   }
   .mob-nav-btn {
     flex: 1;
@@ -3057,8 +3064,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 
   /* ── App container ──────────────────────────────────────── */
   #app {
-    min-height: calc(100dvh - var(--nav-height) - var(--mob-nav-height));
-    height:     calc(100dvh - var(--nav-height) - var(--mob-nav-height));
+    margin-top: calc(var(--nav-height) + var(--safe-top));
+    min-height: calc(100dvh - var(--nav-height) - var(--safe-top) - var(--mob-nav-height) - var(--safe-bottom));
+    height:     calc(100dvh - var(--nav-height) - var(--safe-top) - var(--mob-nav-height) - var(--safe-bottom));
     overflow: hidden;
   }
 
