@@ -1,4 +1,4 @@
-const CACHE = 'mlbag-v2';
+const CACHE = 'mlbag-v3';
 const SHELL = ['./index.html', './styles.css', './main.js', './icon.svg', './manifest.json', './Softball_Field_image_large.jpg'];
 
 self.addEventListener('install', e => {

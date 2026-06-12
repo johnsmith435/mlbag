@@ -54,12 +54,42 @@ function getFavoriteTeamId() {
   return v ? parseInt(v) : null;
 }
 
-function applyFavoriteTeamMeta(teamId) {
+async function generateTeamIconDataUrl(teamId) {
+  try {
+    const res = await fetch(`${PROXY_BASE}/proxy/logo?id=${teamId}`);
+    if (!res.ok) return null;
+    const svg = await res.text();
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const blobUrl = URL.createObjectURL(blob);
+    return await new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = 180; c.height = 180;
+        const ctx = c.getContext('2d');
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(0, 0, 180, 180);
+        ctx.drawImage(img, 20, 20, 140, 140);
+        URL.revokeObjectURL(blobUrl);
+        resolve(c.toDataURL('image/png'));
+      };
+      img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+      img.src = blobUrl;
+    });
+  } catch { return null; }
+}
+
+async function applyFavoriteTeamMeta(teamId) {
   const logoUrl = teamId ? TEAM_LOGO(teamId) : 'icon.svg';
-  const touchIcon = document.getElementById('apple-touch-icon-link');
-  if (touchIcon) touchIcon.href = logoUrl;
   const favImg = document.getElementById('fav-team-logo');
   if (favImg) { favImg.src = logoUrl; favImg.onerror = () => { favImg.src = 'icon.svg'; }; }
+
+  const touchIcon = document.getElementById('apple-touch-icon-link');
+  if (!touchIcon) return;
+  if (!teamId) { touchIcon.href = 'icon.svg'; return; }
+
+  const dataUrl = await generateTeamIconDataUrl(teamId);
+  touchIcon.href = dataUrl || logoUrl;
 }
 
 function setFavoriteTeam(teamId) {
@@ -872,6 +902,7 @@ async function openGamedayView(gamePk, gameData) {
 
   gamesSection.classList.add('hidden');
   gamedayDetail.classList.remove('hidden');
+  showMobBack();
   history.pushState(null, '', `#game/${gamePk}/${state.gdTab || 'live'}/${state.currentDate}`);
 
   document.querySelectorAll('.game-card').forEach(c =>
@@ -4830,6 +4861,9 @@ function syncMobNav(activeId) {
   document.getElementById(activeId)?.classList.add('active');
 }
 
+function showMobBack() { document.getElementById('mob-back-btn')?.classList.add('visible'); }
+function hideMobBack() { document.getElementById('mob-back-btn')?.classList.remove('visible'); }
+
 function openStandings() {
   $('games-section')?.classList.add('hidden');
   $('gameday-detail')?.classList.add('hidden');
@@ -4837,6 +4871,7 @@ function openStandings() {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   $('nav-standings-btn')?.classList.add('active');
   syncMobNav('mob-nav-standings');
+  showMobBack();
   fetchAndRenderStandings();
   history.pushState(null, '', '#standings');
 }
@@ -4853,9 +4888,11 @@ function goToGameday() {
   if (state.selectedGamePk && state.gdData) {
     $('gameday-detail')?.classList.remove('hidden');
     $('games-section')?.classList.add('hidden');
+    showMobBack();
   } else {
     $('games-section')?.classList.remove('hidden');
     $('gameday-detail')?.classList.add('hidden');
+    hideMobBack();
   }
   pushHash();
 }
@@ -5621,10 +5658,12 @@ window.addEventListener('popstate', () => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     $('nav-standings-btn')?.classList.add('active');
     syncMobNav('mob-nav-standings');
+    showMobBack();
     fetchAndRenderStandings();
   } else if (parts[0] === 'game' && parts[1]) {
     // forward navigation — open that game if not already on it
     const pk = parseInt(parts[1]);
+    showMobBack();
     if (state.selectedGamePk !== pk) openGamedayView(pk, state.games?.find(g => g.gamePk === pk) || null);
   } else {
     // back to games grid
@@ -5641,6 +5680,7 @@ window.addEventListener('popstate', () => {
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     $('nav-gameday-btn')?.classList.add('active');
     syncMobNav('mob-nav-games');
+    hideMobBack();
   }
 });
 

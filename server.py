@@ -376,6 +376,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             self._handle_scorecard()
         elif self.path.startswith('/proxy/news'):
             self._handle_news()
+        elif self.path.startswith('/proxy/logo'):
+            self._handle_logo()
         else:
             super().do_GET()
 
@@ -596,6 +598,27 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 pubdate = pub_el.text or '' if pub_el is not None else ''
                 articles.append({'title': title, 'url': link, 'source': source, 'pubDate': pubdate})
             self._json_ok({'articles': articles})
+        except Exception as e:
+            self._json_error(502, str(e))
+
+    def _handle_logo(self):
+        parsed = urllib.parse.urlparse(self.path)
+        params = urllib.parse.parse_qs(parsed.query)
+        team_id = params.get('id', [None])[0]
+        if not team_id or not team_id.isdigit():
+            self._json_error(400, 'id required'); return
+        url = f'https://www.mlbstatic.com/team-logos/{team_id}.svg'
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(req, timeout=8) as resp:
+                body = resp.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/svg+xml')
+            self.send_header('Content-Length', str(len(body)))
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'public, max-age=86400')
+            self.end_headers()
+            self.wfile.write(body)
         except Exception as e:
             self._json_error(502, str(e))
 

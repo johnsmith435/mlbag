@@ -86,6 +86,9 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   flex-shrink: 0;
 }
 
+/* ── Mobile back button (hidden on desktop) ─────────────── */
+#mob-back-btn { display: none; }
+
 /* ── Favorite team button in nav ────────────────────────── */
 #fav-team-btn {
   display: flex;
@@ -3017,6 +3020,26 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
   #search-wrap    { display: none; }
   .nav-links      { display: none; }
   #live-badge     { display: none; }
+  .logo           { display: none; }
+
+  /* ── Back button (mobile only) ──────────────────────────── */
+  #mob-back-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 300;
+    line-height: 1;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    padding: 0 4px 0 0;
+    height: 34px;
+    cursor: pointer;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #mob-back-btn.visible { display: flex; }
   #banner-date-nav {
     gap: 4px;
   }
@@ -3156,16 +3179,30 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
     min-height: 0;
   }
   #gd-live-layout {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     overflow-y: visible;
     height: auto;
   }
-  #gd-status-col, #gd-zone-col, #gd-matchup-col {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    min-height: auto;
+  /* Reorder: pitch zone → count/bases/plays → matchup stats */
+  #gd-zone-col    { order: 1; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
+  #gd-status-col  { order: 2; border-right: none; border-bottom: 1px solid var(--border); min-height: auto; }
+  #gd-matchup-col { order: 3; border-right: none; border-bottom: none; min-height: auto; }
+
+  /* Status col: count + bases side-by-side, compact */
+  #gd-status-col {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
   }
-  #gd-matchup-col { border-bottom: none; }
+  #gd-count-block  { flex-shrink: 0; }
+  #gd-bases-wrap   { flex-shrink: 0; }
+  #bases-svg       { width: 68px !important; height: 63px !important; }
+  #gd-matchup-history { width: 100%; order: 5; }
+  #gd-atbat-section   { width: 100%; order: 6; }
+  #gd-recent-plays    { width: 100%; order: 7; }
   #gd-players-row { grid-template-columns: 1fr; }
 
   /* ── Preview panes ──────────────────────────────────────── */
