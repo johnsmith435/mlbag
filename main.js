@@ -29,7 +29,7 @@ const BR        = 'https://www.baseball-reference.com';
 // Proxy base: empty when running locally, Render URL when deployed to GitHub Pages.
 // Update this after deploying to Render.
 const PROXY_BASE = window.location.hostname.endsWith('github.io')
-  ? 'https://REPLACE_WITH_RENDER_URL.onrender.com'
+  ? 'https://mlb-ag.onrender.com'
   : '';
 
 const CUR_SEASON  = new Date().getFullYear();
