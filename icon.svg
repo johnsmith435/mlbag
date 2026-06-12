@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#0d1117"/>
+  <text x="256" y="210" font-family="system-ui, sans-serif" font-size="90" font-weight="800"
+        fill="#5c6e7a" text-anchor="middle" letter-spacing="8">mlb</text>
+  <text x="256" y="340" font-family="system-ui, sans-serif" font-size="170" font-weight="900"
+        fill="#e63946" text-anchor="middle" letter-spacing="-6">AG</text>
+</svg>

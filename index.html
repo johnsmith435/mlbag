@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="mlbAG" />
+  <meta name="theme-color" content="#0d1117" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon.svg" />
+  <title>mlbAG</title>
+  <link rel="stylesheet" href="styles.css?v=47" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Caveat:wght@400;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════════
+       TOP NAV
+  ═══════════════════════════════════════════════════════════ -->
+  <nav id="nav">
+    <div class="logo"><span class="logo-mlb">mlb</span><span class="logo-ag">AG</span></div>
+
+    <div id="search-wrap">
+      <span id="search-icon">⌕</span>
+      <input id="player-search" type="text" placeholder="Search any player…"
+             autocomplete="off" spellcheck="false" />
+      <div id="search-results" role="listbox"></div>
+    </div>
+
+    <div id="banner-date-nav">
+      <button class="banner-date-btn" id="banner-prev" onclick="changeDateBanner(-1)" title="Previous day">◀</button>
+      <div id="live-games-banner"></div>
+      <button class="banner-date-btn" id="banner-next" onclick="changeDateBanner(1)" title="Next day">▶</button>
+    </div>
+
+    <div class="nav-links">
+      <button class="nav-btn active" id="nav-gameday-btn" onclick="goToGameday()">Gameday</button>
+      <button class="nav-btn" id="nav-standings-btn" onclick="openStandings()">Standings</button>
+    </div>
+
+    <div id="live-badge">
+      <div class="dot"></div>
+      <span id="live-badge-text">Loading…</span>
+    </div>
+  </nav>
+
+  <!-- ══════════════════════════════════════════════════════════
+       MAIN APP
+  ═══════════════════════════════════════════════════════════ -->
+  <div id="app">
+
+    <!-- ─── GAMES GRID SECTION ─────────────────────────────── -->
+    <main id="games-section">
+      <div class="section-header">
+        <h1 class="section-title">MLB <span>Gameday</span></h1>
+        <div id="date-nav">
+          <button class="date-btn" id="prev-date">◀</button>
+          <span id="current-date-label">Today</span>
+          <button class="date-btn" id="next-date">▶</button>
+        </div>
+      </div>
+      <div id="games-grid">
+        <div class="loading-state"><div class="spinner"></div><span>Loading…</span></div>
+      </div>
+    </main>
+
+    <!-- ─── STANDINGS SECTION ──────────────────────────────── -->
+    <section id="standings-section" class="hidden">
+      <div class="section-header">
+        <h1 class="section-title">MLB <span>Standings</span></h1>
+      </div>
+      <div id="standings-content"><div class="loading-state"><div class="spinner"></div></div></div>
+    </section>
+
+    <!-- ─── GAMEDAY DETAIL (shown when a game is selected) ──── -->
+    <section id="gameday-detail" class="hidden">
+
+      <!-- Sticky scoreboard header -->
+      <div id="gd-header">
+        <button id="gd-back">← All Games</button>
+
+        <div id="gd-scoreboard">
+          <!-- Away -->
+          <div class="gd-team-score away" id="gd-away">
+            <img class="gd-team-logo" id="gd-away-logo" src="" alt="" />
+            <div class="gd-team-info">
+              <span class="gd-abbr" id="gd-away-abbr">—</span>
+              <span class="gd-record" id="gd-away-record"></span>
+            </div>
+            <span class="gd-score" id="gd-away-score">0</span>
+          </div>
+
+          <!-- Center: inning / status -->
+          <div id="gd-center">
+            <div id="gd-status-badge" class="game-status pre">Preview</div>
+            <div id="gd-inning-display"></div>
+          </div>
+
+          <!-- Home -->
+          <div class="gd-team-score home" id="gd-home">
+            <span class="gd-score" id="gd-home-score">0</span>
+            <div class="gd-team-info home-info">
+              <span class="gd-abbr" id="gd-home-abbr">—</span>
+              <span class="gd-record" id="gd-home-record"></span>
+            </div>
+            <img class="gd-team-logo" id="gd-home-logo" src="" alt="" />
+          </div>
+
+          <div id="gd-live-chip" class="hidden">
+            <div class="dot"></div> LIVE
+          </div>
+          <a id="gd-watch-btn" class="hidden" target="_blank" rel="noopener">▶ Watch</a>
+        </div>
+
+        <div class="gd-header-nav">
+          <button id="gd-prev-game" class="gd-nav-btn" title="Previous game">‹</button>
+          <button id="gd-next-game" class="gd-nav-btn" title="Next game">›</button>
+        </div>
+      </div>
+
+      <!-- Tab bar -->
+      <div id="gd-tabs">
+        <button class="gd-tab active" data-gdtab="live">Live</button>
+        <button class="gd-tab" data-gdtab="boxscore">Box Score</button>
+      </div>
+
+      <!-- ── LIVE TAB ─────────────────────────────────────── -->
+      <div class="gd-pane active" id="gd-pane-live">
+        <div id="gd-live-layout">
+
+          <!-- ══ COLUMN 1: Count · Bases · At-Bat Log · Recent Plays ══ -->
+          <div id="gd-status-col">
+
+            <!-- Stacked B / S / O count -->
+            <div id="gd-count-block">
+              <div class="count-row">
+                <span class="count-label">B</span>
+                <div class="count-dots" id="count-balls">
+                  <span class="cdot"></span><span class="cdot"></span>
+                  <span class="cdot"></span><span class="cdot"></span>
+                </div>
+              </div>
+              <div class="count-row">
+                <span class="count-label">S</span>
+                <div class="count-dots" id="count-strikes">
+                  <span class="cdot"></span><span class="cdot"></span>
+                  <span class="cdot"></span>
+                </div>
+              </div>
+              <div class="count-row">
+                <span class="count-label">O</span>
+                <div class="count-dots" id="count-outs">
+                  <span class="cdot"></span><span class="cdot"></span>
+                  <span class="cdot"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Base runners diamond -->
+            <div id="gd-bases-wrap">
+              <svg id="bases-svg" viewBox="0 0 120 110" width="106" height="98"
+                   xmlns="http://www.w3.org/2000/svg">
+                <line x1="60" y1="15" x2="100" y2="55" stroke="#2a3748" stroke-width="2"/>
+                <line x1="100" y1="55" x2="60" y2="95" stroke="#2a3748" stroke-width="2"/>
+                <line x1="60" y1="95" x2="20" y2="55" stroke="#2a3748" stroke-width="2"/>
+                <line x1="20" y1="55" x2="60" y2="15" stroke="#2a3748" stroke-width="2"/>
+                <rect id="base-2" transform="translate(60,15) rotate(45)"
+                      x="-9" y="-9" width="18" height="18"
+                      fill="#1c2330" stroke="#4a5568" stroke-width="1.5" rx="1"/>
+                <rect id="base-1" transform="translate(100,55) rotate(45)"
+                      x="-9" y="-9" width="18" height="18"
+                      fill="#1c2330" stroke="#4a5568" stroke-width="1.5" rx="1"/>
+                <rect id="base-3" transform="translate(20,55) rotate(45)"
+                      x="-9" y="-9" width="18" height="18"
+                      fill="#1c2330" stroke="#4a5568" stroke-width="1.5" rx="1"/>
+                <polygon id="base-home" points="60,95 72,83 60,75 48,83"
+                         fill="#1c2330" stroke="#4a5568" stroke-width="1.5"/>
+              </svg>
+              <div id="gd-bases-label">Bases empty</div>
+            </div>
+
+            <!-- Head-to-head matchup history -->
+            <div id="gd-matchup-history"></div>
+
+            <!-- Current at-bat sequence log -->
+            <div id="gd-atbat-section">
+              <div class="col-section-title">AT-BAT</div>
+              <div id="gd-atbat-desc"></div>
+              <div id="gd-atbat-events"></div>
+            </div>
+
+            <!-- Recent plays (compact) -->
+            <div id="gd-recent-plays">
+              <div class="col-section-title">RECENT PLAYS</div>
+              <div id="gd-plays-list"></div>
+            </div>
+
+          </div>
+
+          <!-- ══ COLUMN 2: Strike Zone + Pitch Sequence ══ -->
+          <div id="gd-zone-col">
+
+            <!-- Pitcher name + pitch count above zone -->
+            <div id="gd-pitcher-meta">
+              <span id="gd-pitcher-name-label"></span>
+              <span id="gd-pitch-count-label" class="pitch-count-chip"></span>
+            </div>
+
+            <!-- Zone status label -->
+            <div id="gd-zone-label">—</div>
+
+            <!-- Batter/Pitcher handedness above zone -->
+            <div id="gd-hand-labels">
+              <span id="gd-batter-hand-label" class="hand-label"></span>
+              <span id="gd-pitcher-hand-label" class="hand-label right"></span>
+            </div>
+
+            <!-- Strike zone SVG -->
+            <div id="gd-zone-wrap">
+              <svg id="pitch-zone-svg" viewBox="0 0 340 400"
+                   width="340" height="400"
+                   xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <!-- Clip to rounded rect so image corners are rounded -->
+                  <clipPath id="field-clip">
+                    <rect x="6" y="6" width="328" height="375" rx="4"/>
+                  </clipPath>
+                </defs>
+
+                <!-- Fallback background if field.jpg hasn't been saved yet -->
+                <rect x="6" y="6" width="328" height="375" fill="#1a5c1e" rx="4" stroke="#1a4a88" stroke-width="1"/>
+
+                <!-- ══ STADIUM PHOTO BACKGROUND ══ -->
+                <image href="Softball_Field_image_large.jpg"
+                       x="-58" y="-80" width="492" height="532"
+                       preserveAspectRatio="xMidYMid slice"
+                       clip-path="url(#field-clip)"/>
+
+                <!-- Slight darkening vignette so pitch dots pop against the photo -->
+                <radialGradient id="vignette" cx="50%" cy="60%" r="70%">
+                  <stop offset="0%"   stop-color="rgba(0,0,0,0)"/>
+                  <stop offset="100%" stop-color="rgba(0,0,0,0.38)"/>
+                </radialGradient>
+                <rect x="6" y="6" width="328" height="375" fill="url(#vignette)"
+                      rx="4" clip-path="url(#field-clip)"/>
+
+                <!-- ══ STRIKE ZONE + PITCH ELEMENTS ══ -->
+                <g id="sz-grid"></g>
+                <rect id="sz-box" x="117" y="108" width="106" height="150"
+                      fill="rgba(0,5,18,0.28)" stroke="rgba(255,255,255,0.85)" stroke-width="2"/>
+                <g id="pitch-dots"></g>
+              </svg>
+            </div>
+
+            <!-- Pitch type legend -->
+            <div id="pitch-legend"></div>
+
+            <!-- Pitch sequence for current at-bat -->
+            <div id="pitch-sequence">
+              <div class="pitch-seq-title">AT-BAT PITCHES</div>
+              <div id="pitch-seq-list"></div>
+            </div>
+          </div>
+
+          <!-- ══ COLUMN 3: Matchup — Full Player Stats ══ -->
+          <div id="gd-matchup-col">
+
+            <!-- Current play description -->
+            <div id="gd-play-desc"></div>
+
+            <!-- Batter + Pitcher side by side -->
+            <div id="gd-players-row">
+              <div class="gd-matchup-player" id="gd-batter-card">
+                <div class="gmp-header">
+                  <img class="gd-player-hs gmp-hs" id="gd-batter-hs" src="" alt="" />
+                  <div class="gmp-info">
+                    <div class="gd-player-card-role">BATTER</div>
+                    <div class="gd-player-card-name" id="gd-batter-name">—</div>
+                    <div class="gd-player-card-meta" id="gd-batter-meta"></div>
+                  </div>
+                  <div class="gmp-war war-badge" id="gd-batter-war" style="display:none"></div>
+                </div>
+                <div id="gd-batter-savant"></div>
+              </div>
+
+              <div class="gd-matchup-player" id="gd-pitcher-card">
+                <div class="gmp-header">
+                  <img class="gd-player-hs gmp-hs" id="gd-pitcher-hs" src="" alt="" />
+                  <div class="gmp-info">
+                    <div class="gd-player-card-role">PITCHER</div>
+                    <div class="gd-player-card-name" id="gd-pitcher-name">—</div>
+                    <div class="gd-player-card-meta" id="gd-pitcher-card-meta"></div>
+                  </div>
+                  <div class="gmp-war war-badge" id="gd-pitcher-war" style="display:none"></div>
+                </div>
+                <div id="gd-pitcher-savant"></div>
+              </div>
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+
+      <!-- ── BOX SCORE TAB ────────────────────────────────── -->
+      <div class="gd-pane" id="gd-pane-boxscore">
+        <div id="gd-boxscore-content">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+<!-- ── POST GAME TAB ──────────────────────────────────── -->
+      <div class="gd-pane" id="gd-pane-postgame">
+        <div id="gd-postgame-content"><div class="loading-state"><div class="spinner"></div></div></div>
+      </div>
+
+      <!-- ── PREVIEW TABS ──────────────────────────────────── -->
+      <div class="gd-pane" id="gd-pane-overview">
+        <div id="gd-preview-overview"><div class="loading-state"><div class="spinner"></div></div></div>
+      </div>
+      <div class="gd-pane" id="gd-pane-lineups">
+        <div id="gd-preview-lineups"><div class="loading-state"><div class="spinner"></div></div></div>
+      </div>
+      <div class="gd-pane" id="gd-pane-matchups">
+        <div id="gd-preview-matchups"><div class="loading-state"><div class="spinner"></div></div></div>
+      </div>
+      <div class="gd-pane" id="gd-pane-teamstats">
+        <div id="gd-preview-teamstats"><div class="loading-state"><div class="spinner"></div></div></div>
+      </div>
+
+    </section>
+
+    <!-- ─── PLAYER PROFILE MODAL ────────────────────────────── -->
+    <div id="panel-overlay"></div>
+    <aside id="player-panel" role="dialog" aria-modal="true">
+      <div id="panel-header">
+        <img id="player-headshot" src="" alt="Player headshot" />
+        <div class="player-header-info">
+          <div id="player-full-name">—</div>
+          <div id="player-meta"></div>
+        </div>
+        <div id="panel-war"></div>
+        <button id="panel-close" title="Close">✕</button>
+      </div>
+
+      <div id="panel-tabs" role="tablist">
+        <button class="panel-tab active" data-tab="today">Today</button>
+        <button class="panel-tab" data-tab="stats">Stats</button>
+        <button class="panel-tab" data-tab="savant">Savant</button>
+        <button class="panel-tab" data-tab="comps">Comps</button>
+      </div>
+
+      <div id="panel-body">
+        <div class="tab-pane active" id="tab-today"><div class="panel-loading"><div class="spinner"></div></div></div>
+        <div class="tab-pane" id="tab-stats"><div class="panel-loading"><div class="spinner"></div></div></div>
+        <div class="tab-pane" id="tab-savant"><div class="panel-loading"><div class="spinner"></div></div></div>
+        <div class="tab-pane" id="tab-comps"><div class="panel-loading"><div class="spinner"></div></div></div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div id="video-modal" class="vm-overlay hidden" onclick="if(event.target===this)closeVideoModal()">
+    <div class="vm-inner">
+      <button class="vm-close" onclick="closeVideoModal()">✕</button>
+      <div class="vm-title" id="vm-title"></div>
+      <video id="vm-video" controls autoplay playsinline style="width:100%;max-height:70vh;border-radius:8px;background:#000"></video>
+    </div>
+  </div>
+
+  <!-- ── MOBILE BOTTOM NAV (hidden on desktop via CSS) ────────── -->
+  <nav id="mobile-bottom-nav">
+    <button class="mob-nav-btn active" id="mob-nav-games" onclick="goToGameday()">
+      <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><path d="M4.93 4.93c4.08 3.5 4.08 10.64 0 14.14M19.07 4.93c-4.08 3.5-4.08 10.64 0 14.14M2 12h20M12 2c3.5 4.08 3.5 15.92 0 20M12 2c-3.5 4.08-3.5 15.92 0 20"/>
+      </svg>
+      <span>Games</span>
+    </button>
+    <button class="mob-nav-btn" id="mob-nav-standings" onclick="openStandings()">
+      <svg class="mob-nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+        <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+      </svg>
+      <span>Standings</span>
+    </button>
+  </nav>
+
+  <script src="main.js?v=42"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
